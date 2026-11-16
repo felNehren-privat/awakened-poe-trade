@@ -1,6 +1,7 @@
 import { ParsedItem, ItemRarity, ItemCategory } from '@/parser'
 import { SPECIAL_SUPPORT_GEM, floorToBracket } from '../filters/create-item-filters'
 import { JEWELLERY, ARMOUR, WEAPON } from '@/parser/meta'
+import { ModifierType } from '@/parser/modifiers'
 
 export function isValuableBasetype (item: ParsedItem): boolean {
   if (
@@ -19,6 +20,9 @@ export function isValuableBasetype (item: ParsedItem): boolean {
 export function getDetailsId (item: ParsedItem) {
   if (item.category === ItemCategory.Gem) {
     return forSkillGem(item)
+  }
+  if (item.category === ItemCategory.Viscera) {
+    return forViscera(item)
   }
   if (item.category === ItemCategory.Map) {
     return {
@@ -86,6 +90,20 @@ function forSkillGem (item: ParsedItem) {
     ns: item.info.namespace,
     name: item.info.refName,
     variant
+  }
+}
+
+// poe.ninja: name with tier prefix, variant = mod lines with numbers as "#", joined by " / "
+function forViscera (item: ParsedItem) {
+  const lines = item.newMods
+    .filter(mod => mod.info.type === ModifierType.Implicit || mod.info.type === ModifierType.Explicit)
+    // two-line mods are joined by " / " on poe.ninja as well
+    .flatMap(mod => mod.stats.map(stat => stat.translation.string.replace(/\n/g, ' / ')))
+
+  return {
+    ns: 'VISCERA',
+    name: item.visceraName ?? item.info.refName,
+    variant: lines.length ? lines.join(' / ') : undefined
   }
 }
 

@@ -37,6 +37,7 @@ const parsers: Array<ParserFn | { virtual: VirtualParserFn }> = [
   parseSynthesised,
   parseCategoryByHelpText,
   { virtual: parseMapTier },
+  { virtual: parseViscera },
   { virtual: normalizeName },
   { virtual: findInDatabase },
   // -----------
@@ -152,6 +153,31 @@ function itemTextToSections (text: string) {
     }
   }, sections[0])
   return sections.filter(section => section.length)
+}
+
+// 3.30 Viscera are named "Lesser X", "X" or "Greater X", where X is the base item.
+// The tier prefix is kept for poe.ninja, which prices each tier separately.
+const VISCERA_TIERS = ['Lesser ', 'Greater ']
+
+function parseViscera (item: ParserState) {
+  for (const line of [item.name, item.baseType]) {
+    if (!line) continue
+    const tier = VISCERA_TIERS.find(tier => line.startsWith(tier))
+    const baseName = (tier) ? line.slice(tier.length) : line
+    const info = ITEM_BY_TRANSLATED('ITEM', baseName)
+    if (info?.[0].craftable?.category !== ItemCategory.Viscera) continue
+
+    item.visceraName = line
+    item.name = baseName
+    item.baseType = undefined
+    item.category = ItemCategory.Viscera
+    if (item.rarity == null || item.rarity === ItemRarity.Unique) {
+      // Viscera have their own item frame. Treat them as base items so that
+      // the lookup works and their mods get parsed (needs a known rarity).
+      item.rarity = ItemRarity.Normal
+    }
+    return
+  }
 }
 
 function normalizeName (item: ParserState) {

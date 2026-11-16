@@ -26,3 +26,6 @@ yarn-error.log*
 # vitepress
 docs/.vitepress/dist
 docs/.vitepress/cache
+
+# fork: cached data downloads
+renderer/.cache

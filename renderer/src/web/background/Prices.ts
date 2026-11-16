@@ -88,6 +88,45 @@ export const usePoeninja = createGlobalState(() => {
   }
 
   function findPriceByQuery (query: DbQuery) {
+    const exact = findExactPrice(query)
+    if (exact || query.ns !== 'VISCERA') return exact
+    return findVisceraPrice(query)
+  }
+
+  // poe.ninja keys Viscera by "mod line / mod line" with numbers as "#".
+  // Multi-line mods are sometimes split into separate entries, so fall back to
+  // the entry whose lines are all present on the item.
+  function findVisceraPrice (query: DbQuery) {
+    // poe.ninja turns every number into "#" ("every # seconds") and keeps signs
+    // ("+# to Strength"), app wordings keep fixed numbers and drop the sign
+    const norm = (line: string) => line.replace(/\d+(\.\d+)?/g, '#').replace(/[+-]#/g, '#')
+    const itemLines = new Set((query.variant ?? '').split(' / ').map(norm))
+    const searchString = JSON.stringify({ name: query.name }).slice(0, -1) + ',"variant":"'
+
+    let best: { info: NinjaDenseInfo, url: string, matched: number } | undefined
+    for (const { ns, url, lines } of PRICES_DB) {
+      if (ns !== query.ns) continue
+      let startPos = lines.indexOf(searchString)
+      while (startPos !== -1) {
+        const endPos = lines.indexOf('}', startPos)
+        const info: NinjaDenseInfo = JSON.parse(lines.slice(startPos, endPos + 1))
+        const parts = (info.variant ?? '').split(' / ').map(norm)
+        if (parts.every(part => itemLines.has(part))) {
+          if (!best || parts.length > best.matched) {
+            best = { info, url, matched: parts.length }
+          }
+        }
+        startPos = lines.indexOf(searchString, endPos)
+      }
+    }
+    if (!best) return null
+    return {
+      ...best.info,
+      url: `https://poe.ninja/poe1/economy/${selectedLeagueToUrl()}/${best.url}/${denseInfoToDetailsId(best.info)}`
+    }
+  }
+
+  function findExactPrice (query: DbQuery) {
     // NOTE: order of keys is important
     const searchString = JSON.stringify({
       name: query.name,
@@ -189,6 +228,8 @@ function splitJsonBlob (jsonBlob: string): PriceDatabase {
     { ns: 'ITEM', url: 'ducats', type: 'Ducat' },
     { ns: 'ITEM', url: 'enshrouding-crystals', type: 'EnshroudingCrystal' },
     { ns: 'ITEM', url: 'corpses', type: 'Corpse' },
+    { ns: 'ITEM', url: 'threads', type: 'Thread' },
+    { ns: 'VISCERA', url: 'viscera', type: 'Viscera' },
     { ns: 'DIVINATION_CARD', url: 'divination-cards', type: 'DivinationCard' },
     { ns: 'CAPTURED_BEAST', url: 'beasts', type: 'Beast' },
     { ns: 'UNIQUE', url: 'unique-jewels', type: 'UniqueJewel' },

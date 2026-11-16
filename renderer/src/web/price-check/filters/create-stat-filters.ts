@@ -125,7 +125,8 @@ export function createExactStatFilters (
   } else if (
     item.category === ItemCategory.MemoryLine ||
     item.category === ItemCategory.SanctumRelic ||
-    item.category === ItemCategory.Charm
+    item.category === ItemCategory.Charm ||
+    item.category === ItemCategory.Viscera
   ) {
     enableAllFilters(ctx.filters)
   } else if (item.category === ItemCategory.Idol) {
@@ -491,6 +492,11 @@ function finalFilterTweaks (ctx: FiltersCreationContext) {
     ) {
       filter.disabled = false
     }
+  }
+
+  if (item.category === ItemCategory.Viscera) {
+    // a Viscera's value is its mod, so search for it by default
+    enableAllFilters(ctx.filters)
   }
 
   const basePercentile = ctx.filters.find(fitler => fitler.tradeId[0] === 'item.base_percentile')

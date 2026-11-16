@@ -65,6 +65,8 @@ export interface ParsedItem {
   mercenaryBuild?: BaseType
   mercenarySkills?: ParsedStat[][]
   talismanTier?: number
+  // 3.30 Viscera: full name including tier prefix, e.g. "Lesser Scorched Arm"
+  visceraName?: string
   memoryStrands?: number
   quality?: number
   sockets?: {

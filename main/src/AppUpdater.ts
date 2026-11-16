@@ -36,7 +36,9 @@ export class AppUpdater {
 
     if (!autoUpdater.autoDownload || process.platform === 'darwin') {
       this.noAutoUpdatesReason = 'not-supported'
-    } else if (process.argv.includes('--no-updates')) {
+    } else if (process.argv.includes('--no-updates') || !process.argv.includes('--allow-upstream-updates')) {
+      // fork: releases come from SnosMe/awakened-poe-trade and would replace this build,
+      // so only report them. Start with --allow-upstream-updates to auto-install again.
       autoUpdater.autoDownload = false
       this.noAutoUpdatesReason = 'disabled-by-flag'
     }
