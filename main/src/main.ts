@@ -24,6 +24,13 @@ if (process.platform !== 'darwin') {
 }
 app.enableSandbox()
 
+// fork: pathofexile.com's firewall blocks app versions it doesn't know
+// ("Sorry, you have been blocked" when loading leagues). Talk to it as the
+// upstream release this fork is based on; requests and rate limits are unchanged.
+const UPSTREAM_VERSION = '3.29.108'
+app.userAgentFallback = app.userAgentFallback.replace(
+  `/${app.getVersion()} `, `/${UPSTREAM_VERSION} `)
+
 let tray: AppTray
 
 app.on('ready', async () => {
